@@ -5,10 +5,10 @@ This repository contains a growing set of basic functions and utilities designed
 
 **Features**
 
-Coordinate conversions
-Time calculations
-Data visualization
-Querying astronomical databases
+Coordinate conversions,
+Time calculations,
+Data visualization,
+Querying astronomical databases,
 And more to come!
 
 **Installation**
