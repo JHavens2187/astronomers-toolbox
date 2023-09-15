@@ -1,0 +1,6 @@
+astroplan==0.9
+astropy==5.3.3
+astroquery==0.4.6
+matplotlib==3.8.0
+numpy==1.25.2
+pandas==2.1.0
