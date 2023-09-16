@@ -1,10 +1,9 @@
 # a toolbox for astronomers
-# j. Havens, 2023
+# J. Havens, 2023
 
 import datetime
 import math
 from datetime import datetime, timedelta
-
 import astroplan
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -18,7 +17,6 @@ from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
 from skyfield.api import load, Topos
-
 import LST_calculator as lst
 
 
@@ -204,20 +202,28 @@ def precession(ra, dec, epoch="2000-01-01"):
     return c_prec.ra.degree, c_prec.dec.degree
 
 
-def planet_positions(date):
+def planet_positions(date, observer_location):
+    """
+    calculates the positions of the planets in the solar system
+    :param (list) observer_location: latitude and longitude of observer in degrees
+    :param (list) date: date of observation in YYYY-MM-DD format
+    :return: (list) list of lists containing positions of barycenter of planets in the solar system
+    """
     ts = load.timescale()
-    t = ts.utc(date.year, date.month, date.day)
+    t = ts.utc(date[0], date[1], date[2])
     eph = load('de421.bsp')
     earth = eph['earth']
     planets = ['mercury barycenter', 'venus barycenter', 'mars barycenter', 'jupiter barycenter', 'saturn barycenter']
     positions = {}
+    positions_list = []
 
     for planet in planets:
-        astrometric = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(eph[planet])
+        astrometric = (earth + Topos(latitude_degrees=observer_location[0], longitude_degrees=observer_location[1])).at(t).observe(eph[planet])
         alt, az, _ = astrometric.apparent().altaz()
         positions[planet] = {'Altitude': alt.degrees, 'Azimuth': az.degrees}
+        positions_list.append([alt.degrees, az.degrees])
 
-    return positions
+    return positions_list
 
 
 def planetary_phase(planet, date):
