@@ -17,6 +17,7 @@ from astropy.coordinates import SkyCoord, FK5
 from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
+from skyfield.api import load, Topos
 
 import LST_calculator as lst
 
@@ -108,6 +109,68 @@ def galactic_to_equatorial(l, b):
     return equatorial.ra.degree, equatorial.dec.degree
 
 
+# Function to convert equatorial coordinates to altitude and azimuth
+def radec2altaz(ra, dec, lat, lon, lst):
+    """
+    converts equatorial coordinates to altitude and azimuth
+    :param ra: right ascension of object in degrees
+    :param dec: declination of object in degrees
+    :param lat: latitude of observer in degrees
+    :param lon: longitude of observer in degrees
+    :param lst: local sidereal time in HMS
+    :return: altitude and azimuth of object in degrees
+    """
+
+    ra_rad = math.radians(ra)
+    dec_rad = math.radians(dec)
+    lat_rad = math.radians(lat)
+    lst_rad = math.radians(lst * 15)
+
+    sin_alt = math.sin(dec_rad) * math.sin(lat_rad) + math.cos(dec_rad) * math.cos(lat_rad) * math.cos(lst_rad - ra_rad)
+    alt = math.degrees(math.asin(sin_alt))
+
+    sin_az = math.sin(lst_rad - ra_rad)
+    cos_az = (math.sin(dec_rad) - math.sin(alt) * math.sin(lat_rad)) / (math.cos(alt) * math.cos(lat_rad))
+    az = math.degrees(math.atan2(sin_az, cos_az))
+
+    return alt, az
+
+
+def altaz2radec(alt, az, lat, lon, lst):
+    """
+    Converts horizontal coordinates (Altitude, Azimuth) to equatorial coordinates (RA, DEC).
+
+    Parameters:
+        alt (float): Altitude in degrees
+        az (float): Azimuth in degrees
+        lat (float): Observer's latitude in degrees
+        lon (float): Observer's longitude in degrees (not used but kept for consistency)
+        lst (float): Local Sidereal Time in hours
+
+    Returns:
+        tuple: Right Ascension and Declination in degrees
+    """
+    # Convert angles to radians
+    alt_rad = math.radians(alt)
+    az_rad = math.radians(az)
+    lat_rad = math.radians(lat)
+    lst_rad = math.radians(lst * 15)  # Convert LST to degrees and then to radians
+
+    # Calculate Declination
+    sin_dec = math.sin(alt_rad) * math.sin(lat_rad) + math.cos(alt_rad) * math.cos(lat_rad) * math.cos(az_rad)
+    dec = math.degrees(math.asin(sin_dec))
+
+    # Calculate Right Ascension
+    sin_ra = -math.sin(az_rad) * math.cos(alt_rad)
+    cos_ra = (math.sin(alt_rad) - sin_dec * math.sin(lat_rad)) / (math.cos(math.asin(sin_dec)) * math.cos(lat_rad))
+    ra = lst * 15 - math.degrees(math.atan2(sin_ra, cos_ra))  # Convert lst from hours to degrees
+
+    # Normalize RA to be between 0 and 360
+    ra = ra % 360
+
+    return ra, dec
+
+
 # Time and Motion
 def proper_motion(ra, dec, pm_ra, pm_dec, epoch='2000-01-01'):
     """
@@ -140,6 +203,35 @@ def precession(ra, dec, epoch="2000-01-01"):
     c_prec = c.transform_to(FK5(equinox=current_time))
     return c_prec.ra.degree, c_prec.dec.degree
 
+
+def planet_positions(date):
+    ts = load.timescale()
+    t = ts.utc(date.year, date.month, date.day)
+    eph = load('de421.bsp')
+    earth = eph['earth']
+    planets = ['mercury barycenter', 'venus barycenter', 'mars barycenter', 'jupiter barycenter', 'saturn barycenter']
+    positions = {}
+
+    for planet in planets:
+        astrometric = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(eph[planet])
+        alt, az, _ = astrometric.apparent().altaz()
+        positions[planet] = {'Altitude': alt.degrees, 'Azimuth': az.degrees}
+
+    return positions
+
+
+def planetary_phase(planet, date):
+    ts = load.timescale()
+    t = ts.utc(date.year, date.month, date.day)
+    eph = load('de421.bsp')
+    sun = eph['sun']
+    earth = eph['earth']
+
+    astrometric_planet = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(eph[planet])
+    astrometric_sun = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(sun)
+
+    phase_angle = astrometric_planet.phase_angle(astrometric_sun)
+    return phase_angle.degrees
 
 # Celestial Object Information from SIMBAD
 def get_object_coordinates(object_name):
@@ -195,12 +287,6 @@ def airmass_plot(observer_location, object_name):
     time_range = Time([start_time, end_time])
     plots.plot_airmass(target, observer, time_range)
     plt.show()
-
-
-# Data Handling and Visualization
-def read_fits(file_path):
-    # Placeholder: Implement FITS file reading
-    pass
 
 
 # Get spectrum data from SDSS

@@ -43,10 +43,8 @@ def LST(lat, lon):
     # Print the local sidereal time
     return LST_hours, LST_minutes, LST_seconds
 
-## example usage
+
 '''
-latitude = 38.9717  # Your latitude in decimal degrees (positive for North, negative for South)
-longitude = -95.2353  # Your longitude in decimal degrees (positive for East, negative for West)
-LST_hours, LST_minutes, LST_seconds = LST(latitude, longitude)
+LST_hours, LST_minutes, LST_seconds = LST()
 print("Local Sidereal Time: {}h {}m {:.2f}s".format(LST_hours, LST_minutes, LST_seconds))
 '''
