@@ -19,24 +19,28 @@ from astroquery.simbad import Simbad
 from skyfield.api import load, Topos
 import LST_calculator as lst
 
+
 # TODO: Implement error handling for functions to make the toolbox more robust.
 
 
 class AstroToolbox:
 
-    def __init__(self, observer_location=None, date=None, epoch='2000-01-01'):
+    def __init__(self, ra, dec, observer_location=None, date=None, epoch='2000-01-01'):
         """
         Initialize the AstroToolbox with common parameters.
 
+        :param ra: Right Ascension in degrees.
+        :param dec: Declination in degrees.
         :param observer_location: list containing latitude and longitude in degrees. Default is Lawrence.
         :param date: Date for observations in 'YYYY-MM-DD' format. Default is now.
         :param epoch: Epoch of reference, default to J2000.
         """
-        self.observer_location = observer_location if observer_location else (38.9717, -95.2353)  # Default to Lawrence, KS
+        self.ra = ra  # Right Ascension in degrees
+        self.dec = dec  # Declination in degrees
+        self.observer_location = observer_location if observer_location else (
+            38.9717, -95.2353)  # Default to Lawrence, KS
         self.date = date if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
         self.epoch = epoch  # Default to J2000
-
-    # Existing methods here...
 
     # Utility Functions
     def deg2rad(self, deg):
