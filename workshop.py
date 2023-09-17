@@ -1,51 +1,40 @@
-import astropy.units as u
-from astropy.coordinates import EarthLocation
-import astro_toolbox as tool
+# AstroToolbox Workshop
+# J. Havens, 2023
 
-# Define your location in decimal degrees
-latitude = 38.9717  # Positive for North, negative for South
-longitude = -95.2353  # Positive for East, negative for West
+from astro_toolbox import AstroToolbox
+import datetime
 
-# --- Time and Motion ---
+# Initialize AstroToolbox object
+toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Pleiades", observer_location=(38.9717, -95.2353), date='2023-09-08')
 
-# Get the coordinates of a celestial object (e.g., Pleiades)
-ra_cen, dec_cen = tool.get_object_coordinates("Pleiades")
+# Utility Functions
+print("Utility Functions:")
+print("Degrees to Radians:", toolbox.deg2rad(180))
+print("Radians to Degrees:", toolbox.rad2deg(3.14159))
+print("Degrees to HMS:", toolbox.deg2hms(180))
+print("HMS to Degrees:", toolbox.hms2deg(12, 0, 0))
 
-# Print the coordinates in a readable format
-print(f'Coordinates of Pleiades: RA = {ra_cen[0]}h:{ra_cen[1]}m:{ra_cen[2]:0.4}s, Dec = {dec_cen[0]}˚:{dec_cen[1]}\'{dec_cen[2]:0.4}\"')
+# Coordinate Transformations
+print("\nCoordinate Transformations:")
+print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
+print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.573))
 
-# Calculate the precession of the object's coordinates
-prec_ra, prec_dec = tool.precession(
-    tool.hms2deg(*ra_cen),
-    tool.dms2deg(*dec_cen)
-)
+# Time and Motion
+print("\nTime and Motion:")
+print("Proper Motion:", toolbox.proper_motion(10.684, 41.269))
+print("Precession:", toolbox.precession())
 
-# Convert precession angles from degrees to HMS and DMS
-prec_ra_hms = tool.deg2hms(prec_ra)
-prec_dec_dms = tool.deg2dms(prec_dec)
+# Celestial Object Information from SIMBAD
+print("\nCelestial Object Information:")
+print("Object Coordinates:", toolbox.get_object_coordinates())
 
-# Print the precession values
-print(f'Precession: RA = {prec_ra_hms[0]}h:{prec_ra_hms[1]}m:{prec_ra_hms[2]:0.4}s, Dec = {prec_dec_dms[0]}˚:{prec_dec_dms[1]}\'{prec_dec_dms[2]:0.4}\"')
+# Observational Planning
+print("\nObservational Planning:")
+print("Observable Time:", toolbox.observable_time())
 
-# --- Observational Planning ---
+# Additional Functions
+print("\nAdditional Functions:")
+print("LST:", toolbox.LST())
+print("Planet Positions:", toolbox.planet_positions())
+print("Planetary Phase (Mars):", toolbox.planetary_phase('mars barycenter'))
 
-# Define the observer's location
-observer_location = EarthLocation(lat=33.356389 * u.deg, lon=tool.dms2deg(-116, 51, 54) * u.deg, height=1712 * u.m)
-
-# Calculate the observable time for the object
-print("Observable Time for Pleiades:", tool.observable_time(observer_location, "Pleiades"))
-
-# Get the positions of planets for a specific date and location
-positions = tool.planet_positions([2023, 9, 8], [latitude, longitude])
-
-# Extract Mars' altitude and azimuth
-mars_altitude, mars_azimuth = positions[2][:2]
-
-# Print Mars' altitude and azimuth
-print(f'Mars: Altitude = {mars_altitude:0.4}˚, Azimuth = {mars_azimuth:0.4}˚')
-
-# Convert Mars' Alt-Az to RA-Dec
-mars_ra_dec = tool.altaz2radec(mars_altitude, mars_azimuth, latitude, longitude, lst=tool.LST(latitude, longitude)[0])
-
-# Print Mars' RA and Dec
-print(f'Mars in RA-Dec: RA = {mars_ra_dec[0]:0.4}˚, Dec = {mars_ra_dec[1]:0.4}˚')

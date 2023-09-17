@@ -25,21 +25,22 @@ import LST_calculator as lst
 
 class AstroToolbox:
 
-    def __init__(self, ra, dec, observer_location=None, date=None, epoch='2000-01-01'):
+    def __init__(self, ra, dec, object_name, observer_location=None, date=None, epoch='2000-01-01'):
         """
         Initialize the AstroToolbox with common parameters.
 
-        :param ra: Right Ascension in degrees.
-        :param dec: Declination in degrees.
-        :param observer_location: list containing latitude and longitude in degrees. Default is Lawrence.
-        :param date: Date for observations in 'YYYY-MM-DD' format. Default is now.
-        :param epoch: Epoch of reference, default to J2000.
+        :param (float) ra: Right Ascension in degrees.
+        :param (float) dec: Declination in degrees.
+        :param (str) object_name: Name of the object
+        :param (list) observer_location:  observer's location in [lat, lon] format. Default is Lawrence.
+        :param (str) date: Date for observations in 'YYYY-MM-DD' format. Default is now.
+        :param (str) epoch: Epoch of reference, default to J2000.
         """
         self.ra = ra  # Right Ascension in degrees
         self.dec = dec  # Declination in degrees
-        self.observer_location = observer_location if observer_location else (
-            38.9717, -95.2353)  # Default to Lawrence, KS
-        self.date = date if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
+        self.object_name = object_name
+        self.observer_location = observer_location if observer_location else [38.9717, -95.2353]  # Default to Lawrence, KS
+        self.date = date.strftime('%Y-%m-%d') if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
         self.epoch = epoch  # Default to J2000
 
     # Utility Functions
@@ -81,12 +82,14 @@ class AstroToolbox:
         decsec = (decmin - math.floor(decmin)) * 60
         return deg, math.floor(decmin), decsec
 
-    def LST(self, lat, lon):
+    def LST(self, observer_location=None):
         """
         calculates the local sidereal time
+        :param (list) observer_location: observer's location in lat lon format
         :return: LST_hours, LST_minutes, LST_seconds
         """
         # define your location
+        lat, lon = observer_location[0], observer_location[1]
         if lat and lon is None:  # assume Lawrence, KS
             latitude = 38.9717  # Your latitude in decimal degrees (positive for North, negative for South)
             longitude = -95.2353  # Your longitude in decimal degrees (positive for East, negative for West)
@@ -96,7 +99,7 @@ class AstroToolbox:
         return lst.LST(latitude, longitude)
 
     # Coordinate Transformations
-    def equatorial_to_galactic(self, ra, dec):
+    def equatorial_to_galactic(self, ra=None, dec=None):
         """
         converts equatorial coordinates to galactic coordinates
         :param ra: ra in degrees
@@ -119,13 +122,12 @@ class AstroToolbox:
         return equatorial.ra.degree, equatorial.dec.degree
 
     # Function to convert equatorial coordinates to altitude and azimuth
-    def radec2altaz(self, ra, dec, lat, lon, lst):
+    def radec2altaz(self, lst, ra=None, dec=None, observer_location=None):
         """
         converts equatorial coordinates to altitude and azimuth
         :param ra: right ascension of object in degrees
         :param dec: declination of object in degrees
-        :param lat: latitude of observer in degrees
-        :param lon: longitude of observer in degrees
+        :param (list) observer_location:  observer's location in lat lon format
         :param lst: local sidereal time in HMS
         :return: altitude and azimuth of object in degrees
         """
@@ -145,15 +147,14 @@ class AstroToolbox:
 
         return alt, az
 
-    def altaz2radec(self, alt, az, lat, lon, lst):
+    def altaz2radec(self, alt, az, lst, observer_location=None):
         """
         Converts horizontal coordinates (Altitude, Azimuth) to equatorial coordinates (RA, DEC).
 
         Parameters:
             alt (float): Altitude in degrees
             az (float): Azimuth in degrees
-            lat (float): Observer's latitude in degrees
-            lon (float): Observer's longitude in degrees (not used but kept for consistency)
+            :param (list) observer_location:  observer's location in lat lon format
             lst (float): Local Sidereal Time in hours
 
         Returns:
@@ -180,7 +181,7 @@ class AstroToolbox:
         return ra, dec
 
     # Time and Motion
-    def proper_motion(self, ra, dec, pm_ra, pm_dec, epoch='2000-01-01'):
+    def proper_motion(self, pm_ra, pm_dec, ra=None, dec=None, epoch='2000-01-01'):
         """
         calculates the proper motion of an object
         :param ra: ra in degrees
@@ -196,7 +197,7 @@ class AstroToolbox:
         new_dec = dec + pm_dec * delta_time.to(u.yr).value
         return new_ra, new_dec
 
-    def precession(self, ra, dec, epoch="2000-01-01"):
+    def precession(self, ra=None, dec=None, epoch="2000-01-01"):
         """
         calculates the precession of an object
         :param ra: ra in degrees
@@ -210,10 +211,10 @@ class AstroToolbox:
         c_prec = c.transform_to(FK5(equinox=current_time))
         return c_prec.ra.degree, c_prec.dec.degree
 
-    def planet_positions(self, date, observer_location):
+    def planet_positions(self, date=None, observer_location=None):
         """
         calculates the positions of the planets in the solar system
-        :param (list) observer_location: latitude and longitude of observer in degrees
+        :param (list) observer_location:  observer's location in lat lon format
         :param (list) date: date of observation in YYYY-MM-DD format
         :return: (list) list of lists containing positions of barycenter of planets in the solar system
         """
@@ -236,7 +237,7 @@ class AstroToolbox:
 
         return positions_list
 
-    def planetary_phase(self, planet, date):
+    def planetary_phase(self, planet, date=None):
         ts = load.timescale()
         t = ts.utc(date.year, date.month, date.day)
         eph = load('de421.bsp')
@@ -250,7 +251,7 @@ class AstroToolbox:
         return phase_angle.degrees
 
     # Celestial Object Information from SIMBAD
-    def get_object_coordinates(self, object_name):
+    def get_object_coordinates(self, object_name=None):
         """
         gets the coordinates of an object from SIMBAD
         :param object_name: the name of the object
@@ -264,10 +265,10 @@ class AstroToolbox:
         return ra, dec
 
     # Observational Planning
-    def observable_time(self, observer_location, object_name):
+    def observable_time(self, observer_location=None, object_name=None):
         """
         calculates if an object is observable in the next 24 hours
-        :param observer_location: location of observer
+        :param (list) observer_location:  observer's location in lat lon format
         :param object_name: name of the object
         :return: boolean if object is observable
         """
@@ -284,10 +285,10 @@ class AstroToolbox:
         observable = astroplan.is_observable(constraints, observer, target, time_range=time_range)
         return observable
 
-    def airmass_plot(self, observer_location, object_name):
+    def airmass_plot(self, observer_location=None, object_name=None):
         """
         plots the airmass of an object over the next 24 hours
-        :param observer_location: observer location
+        :param (list) observer_location:  observer's location in lat lon format
         :param object_name: object name
         :return: plot of the airmass of the object over the next 24 hours
         """
@@ -303,7 +304,7 @@ class AstroToolbox:
         plt.show()
 
     # Get spectrum data from SDSS
-    def get_spectrum(self, object_name):
+    def get_spectrum(self, object_name=None):
         """
         Gets the spectrum of an object from SDSS.
 
