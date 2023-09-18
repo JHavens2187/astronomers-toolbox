@@ -5,7 +5,7 @@ from astro_toolbox import AstroToolbox
 import datetime
 
 # Initialize AstroToolbox object
-toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Pleiades", observer_location=(38.9717, -95.2353), date='2023-09-08')
+toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Pleiades", observer_location=(38.9717, -95.2353), date=[2023, 9, 18])
 
 # Utility Functions
 print("Utility Functions:")
@@ -15,7 +15,7 @@ print("Degrees to HMS:", toolbox.deg2hms(180))
 print("HMS to Degrees:", toolbox.hms2deg(12, 0, 0))
 
 # Coordinate Transformations
-print("\nCoordinate Transformations:")
+print("Coordinate Transformations:")
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
 print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.573))
 
@@ -37,4 +37,3 @@ print("\nAdditional Functions:")
 print("LST:", toolbox.LST())
 print("Planet Positions:", toolbox.planet_positions())
 print("Planetary Phase (Mars):", toolbox.planetary_phase('mars barycenter'))
-

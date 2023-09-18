@@ -12,7 +12,7 @@ import pandas as pd
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint
 from astroplan import Observer, FixedTarget
 from astroplan import plots
-from astropy.coordinates import SkyCoord, FK5
+from astropy.coordinates import SkyCoord, FK5, EarthLocation
 from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
@@ -40,7 +40,7 @@ class AstroToolbox:
         self.dec = dec  # Declination in degrees
         self.object_name = object_name
         self.observer_location = observer_location if observer_location else [38.9717, -95.2353]  # Default to Lawrence, KS
-        self.date = date.strftime('%Y-%m-%d') if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
+        self.date = date if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
         self.epoch = epoch  # Default to J2000
 
     # Utility Functions
@@ -89,6 +89,8 @@ class AstroToolbox:
         :return: LST_hours, LST_minutes, LST_seconds
         """
         # define your location
+        if observer_location is None:
+            observer_location = self.observer_location
         lat, lon = observer_location[0], observer_location[1]
         if lat and lon is None:  # assume Lawrence, KS
             latitude = 38.9717  # Your latitude in decimal degrees (positive for North, negative for South)
@@ -106,6 +108,10 @@ class AstroToolbox:
         :param dec: dec in degrees
         :return: l and b IN DEGREES
         """
+        if ra is None:
+            ra = self.ra
+        if dec is None:
+            dec = self.dec
         c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame='icrs')
         galactic = c.galactic
         return galactic.l.degree, galactic.b.degree
@@ -131,7 +137,12 @@ class AstroToolbox:
         :param lst: local sidereal time in HMS
         :return: altitude and azimuth of object in degrees
         """
-
+        if ra is None:
+            ra = self.ra
+        if dec is None:
+            dec = self.dec
+        if observer_location is None:
+            observer_location = self.observer_location
         ra_rad = math.radians(ra)
         dec_rad = math.radians(dec)
         lat_rad = math.radians(lat)
@@ -160,6 +171,8 @@ class AstroToolbox:
         Returns:
             tuple: Right Ascension and Declination in degrees
         """
+        if observer_location is None:
+            observer_location = self.observer_location
         # Convert angles to radians
         alt_rad = math.radians(alt)
         az_rad = math.radians(az)
@@ -181,7 +194,7 @@ class AstroToolbox:
         return ra, dec
 
     # Time and Motion
-    def proper_motion(self, pm_ra, pm_dec, ra=None, dec=None, epoch='2000-01-01'):
+    def proper_motion(self, pm_ra, pm_dec, ra=None, dec=None, epoch=None):
         """
         calculates the proper motion of an object
         :param ra: ra in degrees
@@ -191,13 +204,19 @@ class AstroToolbox:
         :param epoch: epoch of reference, default to J2000
         :return: current position as a result of proper motion IN DEGREES
         """
+        if ra is None:
+            ra = self.ra
+        if dec is None:
+            dec = self.dec
+        if epoch is None:
+            epoch = self.epoch
         current_time = Time(datetime.now())
         delta_time = current_time - Time(epoch)
         new_ra = ra + pm_ra * delta_time.to(u.yr).value
         new_dec = dec + pm_dec * delta_time.to(u.yr).value
         return new_ra, new_dec
 
-    def precession(self, ra=None, dec=None, epoch="2000-01-01"):
+    def precession(self, ra=None, dec=None, epoch=None):
         """
         calculates the precession of an object
         :param ra: ra in degrees
@@ -205,6 +224,12 @@ class AstroToolbox:
         :param epoch: epoch of reference, default to J2000
         :return: updated ra and dec IN DEGREES
         """
+        if ra is None:
+            ra = self.ra
+        if dec is None:
+            dec = self.dec
+        if epoch is None:
+            epoch = self.epoch
         epoch_time = Time(epoch)
         current_time = Time(datetime.now())
         c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame=FK5, equinox=epoch_time)
@@ -218,8 +243,12 @@ class AstroToolbox:
         :param (list) date: date of observation in YYYY-MM-DD format
         :return: (list) list of lists containing positions of barycenter of planets in the solar system
         """
+        if date is None:
+            date = self.date
+        if observer_location is None:
+            observer_location = self.observer_location
         ts = load.timescale()
-        t = ts.utc(date[0], date[1], date[2])
+        t = ts.utc(int(date[0]), int(date[1]), int(date[2]))
         eph = load('de421.bsp')
         earth = eph['earth']
         planets = ['mercury barycenter', 'venus barycenter', 'mars barycenter', 'jupiter barycenter',
@@ -238,8 +267,10 @@ class AstroToolbox:
         return positions_list
 
     def planetary_phase(self, planet, date=None):
+        if date is None:
+            date = self.date
         ts = load.timescale()
-        t = ts.utc(date.year, date.month, date.day)
+        t = ts.utc(date[0], date[1], date[2])
         eph = load('de421.bsp')
         sun = eph['sun']
         earth = eph['earth']
@@ -257,11 +288,12 @@ class AstroToolbox:
         :param object_name: the name of the object
         :return: ra and dec of object IN HMS/DMS
         """
-
+        if object_name is None:
+            object_name = self.object_name
         result_table = Simbad.query_object(object_name)
         coord = SkyCoord(ra=result_table['RA'].data[0], dec=result_table['DEC'].data[0], unit=(u.deg, u.deg))
-        ra = deg2hms(coord.ra.degree)
-        dec = deg2dms(coord.dec.degree)
+        ra = self.deg2hms(coord.ra.degree)
+        dec = self.deg2dms(coord.dec.degree)
         return ra, dec
 
     # Observational Planning
@@ -272,6 +304,11 @@ class AstroToolbox:
         :param object_name: name of the object
         :return: boolean if object is observable
         """
+        if observer_location is None:
+            observer_location = self.observer_location
+        if object_name is None:
+            object_name = self.object_name
+        observer_location = EarthLocation(lat=observer_location[0] * u.deg, lon=observer_location[1] * u.deg)
         observer = Observer(location=observer_location)
         target = FixedTarget.from_name(object_name)
         # Get the current date and time in UTC format
@@ -292,6 +329,10 @@ class AstroToolbox:
         :param object_name: object name
         :return: plot of the airmass of the object over the next 24 hours
         """
+        if observer_location is None:
+            observer_location = self.observer_location
+        if object_name is None:
+            object_name = self.object_name
         observer = Observer(location=observer_location)
         target = FixedTarget.from_name(object_name)
         # Get the current date and time
@@ -311,6 +352,8 @@ class AstroToolbox:
         :param object_name: Name of the celestial object.
         :return: Spectrum of the object.
         """
+        if object_name is None:
+            object_name = self.object_name
         # Convert object_name to SkyCoord object
         co = SkyCoord.from_name(object_name)
 
