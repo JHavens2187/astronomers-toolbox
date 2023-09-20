@@ -39,7 +39,8 @@ class AstroToolbox:
         self.ra = ra  # Right Ascension in degrees
         self.dec = dec  # Declination in degrees
         self.object_name = object_name
-        self.observer_location = observer_location if observer_location else [38.9717, -95.2353]  # Default to Lawrence, KS
+        self.observer_location = observer_location if observer_location else [38.9717,
+                                                                              -95.2353]  # Default to Lawrence, KS
         self.date = date if date else datetime.utcnow().strftime('%Y-%m-%d')  # Default to current date
         self.epoch = epoch  # Default to J2000
 
@@ -266,19 +267,44 @@ class AstroToolbox:
 
         return positions_list
 
-    def planetary_phase(self, planet, date=None):
+    def planetary_phase(self, planet, date=None, observer_location=None):
+        """
+        Calculate the phase angle of a given planet as observed from Earth. \n
+        0˚ - full phase \n
+        90˚ - first quarter phase \n
+        180˚ - new phase \n
+        :param (str) planet: The name of the planet for which to calculate the phase angle. Must be a valid name recognized by the Skyfield library (e.g., 'mars barycenter').
+        :param (list) date: (optional) date of observation. If not provided, self.date will be used.
+        :param (list) observer_location: (optional) location of observer. If not provided, self.observer_location will be used.
+        :return: (float) The phase angle of the planet in degrees. The phase angle is the angle between the Sun and the planet as observed from Earth.
+        It gives an idea of how much of the planet's disk is illuminated from the observer's perspective.\n
+        Example: \n
+        >>> planetary_phase('mars barycenter') \n
+        >>> 19.08 \n
+        """
         if date is None:
             date = self.date
+        if observer_location is None:
+            observer_location = self.observer_location
         ts = load.timescale()
         t = ts.utc(date[0], date[1], date[2])
         eph = load('de421.bsp')
         sun = eph['sun']
         earth = eph['earth']
 
-        astrometric_planet = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(eph[planet])
-        astrometric_sun = (earth + Topos(latitude_deg=0, longitude_deg=0)).at(t).observe(sun)
+        # Use actual observer's latitude and longitude
+        observer_latitude = observer_location[0]
+        observer_longitude = observer_location[1]
 
-        phase_angle = astrometric_planet.phase_angle(astrometric_sun)
+        astrometric_planet = (
+                    earth + Topos(latitude_degrees=observer_latitude, longitude_degrees=observer_longitude)).at(
+            t).observe(eph[planet]).apparent()
+        astrometric_sun = (earth + Topos(latitude_degrees=observer_latitude, longitude_degrees=observer_longitude)).at(
+            t).observe(sun).apparent()
+
+        # Calculate the phase angle using separation_from method
+        phase_angle = astrometric_planet.separation_from(astrometric_sun)
+
         return phase_angle.degrees
 
     # Celestial Object Information from SIMBAD
