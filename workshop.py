@@ -1,14 +1,17 @@
 from astro_toolbox import AstroToolbox
 import math
+import numpy as np
+from astropy import units as u
 
 # Initialize AstroToolbox object
-toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.9717, -95.2353], date=[2023, 9, 21], epoch='2000-01-01')
+toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.9717, -95.2353],
+                       date=[2023, 9, 21], epoch='2000-01-01')
 
 # Utility Functions
 print("Degrees to Radians:", toolbox.deg2rad(180))
 print("Radians to Degrees:", toolbox.rad2deg(math.pi))
 print("Degrees to HMS:", toolbox.deg2hms(180))
-print("HMS to Degrees:", toolbox.hms2deg(12, 0, 0))
+print(toolbox.jy2cgs_angs(toolbox.cgs_angs2jy(501e-11)))
 
 # Coordinate Transformations
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())

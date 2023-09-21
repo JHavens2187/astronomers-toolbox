@@ -70,18 +70,28 @@ class AstroToolbox:
         return deg, math.floor(decmin), decsec
 
     def dms2hms(self, deg, min, sec):
-        decdeg = degminsec2deg(deg, min, sec)
+        decdeg = self.dms2deg(deg, min, sec)
         dechr = 15 * decdeg
         decmin = (dechr - math.floor(dechr)) * 60
         decsec = (decmin - math.floor(decmin)) * 60
         return math.floor(dechr), math.floor(decmin), decsec
 
     def hms2dms(self, hr, min, sec):
-        decdeg = hms2deg(hr, min, sec)
+        decdeg = self.hms2deg(hr, min, sec)
         deg = math.floor(decdeg)
         decmin = (decdeg - deg) * 60
         decsec = (decmin - math.floor(decmin)) * 60
         return deg, math.floor(decmin), decsec
+
+    def cgs_angs2jy(self, cgs_angs, cen_wave):
+        c = 2.998e18  # angstroms/s
+        fhz = (cen_wave ** 2 * cgs_angs) / c
+        return (fhz * 1e23) * u.Jy
+
+    def jy2cgs_angs(self, jy, cen_wave):
+        c = 2.998e18 # angstroms/s
+        fhz = jy / 1e23 * (u.erg / (u.cm ** 2 * u.s * u.Hz))
+        return (fhz * cenwave **2) / c * (u.erg / (u.cm ** 2 * u.s * u.angstrom))
 
     def LST(self, observer_location=None):
         """
@@ -276,9 +286,6 @@ class AstroToolbox:
         :param (list) observer_location: (optional) location of observer. If not provided, self.observer_location will be used.
         :return: (float) The phase angle of the planet in degrees. The phase angle is the angle between the Sun and the planet as observed from Earth.
         It gives an idea of how much of the planet's disk is illuminated from the observer's perspective.\n
-        Example: \n
-        >>> planetary_phase('mars barycenter') \n
-        >>> 19.08 \n
         """
         if date is None:
             date = self.date
@@ -295,7 +302,7 @@ class AstroToolbox:
         observer_longitude = observer_location[1]
 
         astrometric_planet = (
-                    earth + Topos(latitude_degrees=observer_latitude, longitude_degrees=observer_longitude)).at(
+                earth + Topos(latitude_degrees=observer_latitude, longitude_degrees=observer_longitude)).at(
             t).observe(eph[planet]).apparent()
         astrometric_sun = (earth + Topos(latitude_degrees=observer_latitude, longitude_degrees=observer_longitude)).at(
             t).observe(sun).apparent()
@@ -410,7 +417,6 @@ class AstroToolbox:
         :param dec2: dec2 in degrees of obj 2
         :return: angular distance in degrees
         """
-
         c1 = SkyCoord(ra=ra1 * u.degree, dec=dec1 * u.degree, frame='icrs')
         c2 = SkyCoord(ra=ra2 * u.degree, dec=dec2 * u.degree, frame='icrs')
         return c1.separation(c2).degree
