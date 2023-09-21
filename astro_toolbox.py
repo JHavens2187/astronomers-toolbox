@@ -146,8 +146,8 @@ class AstroToolbox:
             observer_location = self.observer_location
         ra_rad = math.radians(ra)
         dec_rad = math.radians(dec)
-        lat_rad = math.radians(lat)
-        lst_rad = math.radians(lst * 15)
+        lat_rad = math.radians(observer_location[0])
+        lst_rad = math.radians(lst[0] * 15)
 
         sin_alt = math.sin(dec_rad) * math.sin(lat_rad) + math.cos(dec_rad) * math.cos(lat_rad) * math.cos(
             lst_rad - ra_rad)
@@ -163,14 +163,12 @@ class AstroToolbox:
         """
         Converts horizontal coordinates (Altitude, Azimuth) to equatorial coordinates (RA, DEC).
 
-        Parameters:
-            alt (float): Altitude in degrees
-            az (float): Azimuth in degrees
+            :param (float) alt: Altitude in degrees
+            :param (float) az: Azimuth in degrees
             :param (list) observer_location:  observer's location in lat lon format
-            lst (float): Local Sidereal Time in hours
+            :param (float) lst: Local Sidereal Time in hours
 
-        Returns:
-            tuple: Right Ascension and Declination in degrees
+            :return tuple: Right Ascension and Declination in degrees
         """
         if observer_location is None:
             observer_location = self.observer_location

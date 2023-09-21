@@ -1,39 +1,36 @@
-# AstroToolbox Workshop
-# J. Havens, 2023
-
 from astro_toolbox import AstroToolbox
-import datetime
+import math
 
 # Initialize AstroToolbox object
-toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Pleiades", observer_location=(38.9717, -95.2353), date=[2023, 9, 18])
+toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.9717, -95.2353], date=[2023, 9, 21], epoch='2000-01-01')
 
 # Utility Functions
-print("Utility Functions:")
 print("Degrees to Radians:", toolbox.deg2rad(180))
-print("Radians to Degrees:", toolbox.rad2deg(3.14159))
+print("Radians to Degrees:", toolbox.rad2deg(math.pi))
 print("Degrees to HMS:", toolbox.deg2hms(180))
 print("HMS to Degrees:", toolbox.hms2deg(12, 0, 0))
 
 # Coordinate Transformations
-print("Coordinate Transformations:")
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
-print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.573))
+print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.5728))
 
-# Time and Motion
-print("\nTime and Motion:")
-print("Proper Motion:", toolbox.proper_motion(10.684, 41.269))
-print("Precession:", toolbox.precession())
+# Local Sidereal Time
+print("Local Sidereal Time:", toolbox.LST())
 
-# Celestial Object Information from SIMBAD
-print("\nCelestial Object Information:")
-print("Object Coordinates:", toolbox.get_object_coordinates())
+# Altitude and Azimuth
+alt, az = toolbox.radec2altaz(lst=toolbox.LST())
+print("Altitude:", alt, "Azimuth:", az)
 
-# Observational Planning
-print("\nObservational Planning:")
-print("Observable Time:", toolbox.observable_time())
+# Proper Motion
+new_ra, new_dec = toolbox.proper_motion(pm_ra=0.0001, pm_dec=0.0002)
+print("New RA:", new_ra, "New Dec:", new_dec)
 
-# Additional Functions
-print("\nAdditional Functions:")
-print("LST:", toolbox.LST())
+# Precession
+prec_ra, prec_dec = toolbox.precession()
+print("Precessed RA:", prec_ra, "Precessed Dec:", prec_dec)
+
+# Planet Positions
 print("Planet Positions:", toolbox.planet_positions())
-print(f'Planetary Phase (Mars):{toolbox.planetary_phase("mars barycenter"):2.4}')
+
+# Planetary Phase
+print(f'Planetary Phase of Mars:, {toolbox.planetary_phase("mars barycenter"):0.4}')
