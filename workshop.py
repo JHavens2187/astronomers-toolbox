@@ -11,7 +11,8 @@ toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_
 print("Degrees to Radians:", toolbox.deg2rad(180))
 print("Radians to Degrees:", toolbox.rad2deg(math.pi))
 print("Degrees to HMS:", toolbox.deg2hms(180))
-print(toolbox.jy2cgs_angs(toolbox.cgs_angs2jy(501e-11)))
+print(toolbox.cgs_angs2jy(148.6e-11, 5450), toolbox.cgs_angs2jy(4.2e-11, 5450))
+print(toolbox.jy2cgs_angs(1472.2, 5450))
 
 # Coordinate Transformations
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())

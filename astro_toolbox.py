@@ -84,14 +84,26 @@ class AstroToolbox:
         return deg, math.floor(decmin), decsec
 
     def cgs_angs2jy(self, cgs_angs, cen_wave):
+        """
+        converts flux in units of erg/s/cm^2/angstrom to janskys
+        :param cgs_angs: flux in cgs units
+        :param cen_wave: reference wavelength in angstroms
+        :return: flux in Jy units
+        """
         c = 2.998e18  # angstroms/s
         fhz = (cen_wave ** 2 * cgs_angs) / c
-        return (fhz * 1e23) * u.Jy
+        return fhz * 1e23
 
     def jy2cgs_angs(self, jy, cen_wave):
-        c = 2.998e18 # angstroms/s
-        fhz = jy / 1e23 * (u.erg / (u.cm ** 2 * u.s * u.Hz))
-        return (fhz * cenwave **2) / c * (u.erg / (u.cm ** 2 * u.s * u.angstrom))
+        """
+        converts flux in units of janskys to erg/s/cm^2/angstrom
+        :param jy: flux in Jy units
+        :param cen_wave: reference wavelength in angstroms
+        :return: flux in units of erg/s/cm^2/angstrom
+        """
+        c = 2.998e18  # angstroms/s
+        fhz = jy / 1e23
+        return fhz * (c / (cen_wave ** 2))
 
     def LST(self, observer_location=None):
         """
