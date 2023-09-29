@@ -16,6 +16,7 @@ from astropy.coordinates import SkyCoord, FK5, EarthLocation
 from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
+import skyfield
 from skyfield.api import load, Topos
 import LST_calculator as lst
 
