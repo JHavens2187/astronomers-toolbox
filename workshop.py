@@ -14,6 +14,13 @@ print("Degrees to HMS:", toolbox.deg2hms(180))
 print(toolbox.cgs_angs2jy(148.6e-11, 5450), toolbox.cgs_angs2jy(4.2e-11, 5450))
 print(toolbox.jy2cgs_angs(1472.2, 5450))
 
+dec = [0, 20, 40, 60, 70, 80, 85]
+RA = []
+for angle in dec:
+    RA.append(toolbox.deg2hms((5/18) / (np.cos(np.radians(angle)))))
+
+print("RA= ",RA)
+
 # Coordinate Transformations
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
 print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.5728))
