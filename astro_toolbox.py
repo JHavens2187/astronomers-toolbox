@@ -4,20 +4,23 @@
 import datetime
 import math
 from datetime import datetime, timedelta
+
 import astroplan
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint
-from astroplan import Observer, FixedTarget
-from astroplan import plots
+from astroplan import FixedTarget
+from astroplan import Observer
+from astroplan.plots import plot_airmass, plot_altitude
 from astropy.coordinates import SkyCoord, FK5, EarthLocation
 from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
-import skyfield
+from astroquery.skyview import SkyView
 from skyfield.api import load, Topos
+
 import LST_calculator as lst
 
 
@@ -366,26 +369,79 @@ class AstroToolbox:
         observable = astroplan.is_observable(constraints, observer, target, time_range=time_range)
         return observable
 
-    def airmass_plot(self, observer_location=None, object_name=None):
+    def plot_sky(self, observer_location=None, targets=None, observation_time=None):
         """
-        plots the airmass of an object over the next 24 hours
-        :param (list) observer_location:  observer's location in lat lon format
-        :param object_name: object name
-        :return: plot of the airmass of the object over the next 24 hours
+        Plots the airmass and altitude of multiple objects.
+        :param observer_location: observer's location in lat lon format
+        :param targets: list of target names or coordinates
+        :param observation_time: Time of observation in 'YYYY-MM-DD HH:MM:SS' format
+        :return: plot of the airmass and altitude of the objects
         """
         if observer_location is None:
-            observer_location = self.observer_location
-        if object_name is None:
-            object_name = self.object_name
+            observer_location = self.observer_location  # Replace with your default observer location
+
+        observer_location = EarthLocation(lat=observer_location[0]*u.deg, lon=observer_location[1]*u.deg, height=1*u.m)
+        # Create an Observer object
         observer = Observer(location=observer_location)
-        target = FixedTarget.from_name(object_name)
-        # Get the current date and time
-        now = datetime.utcnow()
-        # Set the time range for the next 24 hours
-        start_time = Time(now)
-        end_time = Time(now + timedelta(days=1))
-        time_range = Time([start_time, end_time])
-        plots.plot_airmass(target, observer, time_range)
+
+        if observation_time is None:
+            now = datetime.utcnow()
+            observation_time = Time(now)
+
+        fig, ax1 = plt.subplots()
+
+        ax2 = ax1.twinx()
+
+        for target in targets:
+            if isinstance(target, str):
+                target = FixedTarget.from_name(target)
+            elif isinstance(target, dict):
+                coord = SkyCoord(ra=target['ra'] * u.deg, dec=target['dec'] * u.deg)
+                target = FixedTarget(coord=coord, name=target.get('name', 'Unknown'))
+
+            plot_airmass(target, observer, observation_time, ax=ax1)
+            plot_altitude(target, observer, observation_time, ax=ax2)
+
+        # Plot a line and shaded region at and above an elevation of 60 degrees
+        xmin, xmax = ax1.get_xlim()
+        x_line = np.linspace(xmin, xmax, 100)
+        y = [60] * 100
+        ax2.plot(x_line, y, ls='--')
+        ax2.fill_between(x_line, 60, 90, alpha=0.1, color='orange')
+
+        ax1.set_ylabel('Airmass')
+        ax2.set_ylabel('Altitude [deg]')
+        plt.legend()
+        plt.show()
+
+    def get_finder_scope(self, fov, ra=None, dec=None, img_width=40/60, img_height=40/60):
+        if ra is None:
+            ra = self.ra
+        if dec is None:
+            dec = self.dec
+
+        # Use the RA and DEC to make a SkyCoord object, which we use to query and image
+        source_coord = SkyCoord(ra=ra * u.deg, dec=dec * u.deg)
+
+        ####FIX IMPLEMENTED####
+        # Query an image using astroquery with the given coordinates and image width/height
+        # xout = SkyView.get_images(source_coord,survey=['DSS'],height=img_height*u.deg,width=img_width*u.deg)
+        xout = SkyView.get_images(source_coord, survey=['DSS'], pixels=1200)
+
+        # Make the figure object and handle the fits image appropriately.
+        fig, ax = plt.subplots(figsize=(8, 8))
+        b = xout[0][0]
+        ax.imshow(xout[0][0].data, aspect='equal', cmap='gray_r',
+                  extent=[b.header['CRVAL1'] - (b.header['NAXIS1'] - b.header['CRPIX1']) * b.header['CDELT1'],
+                          b.header['CRVAL1'] + (b.header['NAXIS1'] - b.header['CRPIX1']) * b.header['CDELT1'],
+                          b.header['CRVAL2'] + (b.header['NAXIS2'] - b.header['CRPIX2']) * b.header['CDELT2'],
+                          b.header['CRVAL2'] - (b.header['NAXIS2'] - b.header['CRPIX2']) * b.header['CDELT2']])
+        # Overlay a rectangle indicating the fov
+        rect = plt.Rectangle((ra - 0.5 * (fov), dec - 0.5 * (fov)), fov, fov, linewidth=1, fill=False,
+                             color='k')
+        ax.add_patch(rect)
+        ax.set_xlabel(r'RA [DEG]')
+        ax.set_ylabel(r'DEC [DEG]')
         plt.show()
 
     # Get spectrum data from SDSS
