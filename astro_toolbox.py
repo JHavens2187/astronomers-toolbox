@@ -308,8 +308,8 @@ class AstroToolbox:
         if observer_location is None:
             observer_location = self.observer_location
         ts = load.timescale()
-        t = ts.utc(date[0], date[1], date[2])
-        eph = load('de421.bsp')
+        t = ts.utc(date[0], month=date[1], day=date[2])
+        eph = load('de440.bsp')
         sun = eph['sun']
         earth = eph['earth']
 

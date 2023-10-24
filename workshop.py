@@ -1,12 +1,10 @@
 import math
 
-from astropy.time import Time
-
 from astro_toolbox import AstroToolbox
 
 # Initialize AstroToolbox object
 toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.9717, -95.2353],
-                       date=[2023, 9, 21], epoch='2000-01-01')
+                       date=[2023, 10, 24], epoch='2000-01-01')
 
 # Utility Functions
 print("Degrees to Radians:", toolbox.deg2rad(180))
@@ -20,13 +18,13 @@ source_RA = toolbox.hms2deg(22, 52, 6)
 source_DEC = toolbox.dms2deg(58, 17, 00)
 fov = 27.9139  # in arcmin
 fov_degrees = fov/60
-toolbox.get_finder_scope(fov_degrees, ra=source_RA, dec=source_DEC, object_name="Czernik 44")
-
-targets = [
-    {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
-    'Polaris'
-]
-toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
+# toolbox.get_finder_scope(fov_degrees, ra=source_RA, dec=source_DEC, object_name="Czernik 44")
+#
+# targets = [
+#     {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
+#     'Polaris'
+# ]
+# toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
 
 # Coordinate Transformations
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
@@ -51,4 +49,6 @@ print("Precessed RA:", prec_ra, "Precessed Dec:", prec_dec)
 print("Planet Positions:", toolbox.planet_positions())
 
 # Planetary Phase
-print(f'Planetary Phase of Mars:, {toolbox.planetary_phase("mars barycenter"):0.4}')
+planet = "mars barycenter"
+planet = 301
+print(f'Planetary Phase of {planet}:, {toolbox.planetary_phase(planet, date=[2023, 10, 28]):0.4}')
