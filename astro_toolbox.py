@@ -154,7 +154,7 @@ class AstroToolbox:
         equatorial = c.icrs
         return equatorial.ra.degree, equatorial.dec.degree
 
-    # Function to convert equatorial coordinates to altitude and azimuth
+    # Function to convert between equatorial coordinates and altitude and azimuth
     def radec2altaz(self, lst, ra=None, dec=None, observer_location=None):
         """
         converts equatorial coordinates to altitude and azimuth
@@ -414,7 +414,7 @@ class AstroToolbox:
         plt.legend()
         plt.show()
 
-    def get_finder_scope(self, fov, ra=None, dec=None, img_width=40/60, img_height=40/60):
+    def get_finder_scope(self, fov, ra=None, dec=None, object_name='object', img_width=40/60, img_height=40/60):
         if ra is None:
             ra = self.ra
         if dec is None:
@@ -439,9 +439,18 @@ class AstroToolbox:
         # Overlay a rectangle indicating the fov
         rect = plt.Rectangle((ra - 0.5 * (fov), dec - 0.5 * (fov)), fov, fov, linewidth=1, fill=False,
                              color='k')
+
+        # plot the finder scope
+        ax.set_xticklabels(
+            [f"{round(h, 2)}h {round(m, 2)}m {round(s, 2)}s" for h, m, s in [self.deg2hms(x) for x in ax.get_xticks()]],
+            fontsize=10, rotation=30)
+        ax.set_yticklabels(
+            [f"{round(d, 2)}˚ {round(m, 2)}' {round(s, 2)}s" for d, m, s in [self.deg2dms(y) for y in ax.get_yticks()]],
+            fontsize=10, rotation=30)
         ax.add_patch(rect)
-        ax.set_xlabel(r'RA [DEG]')
-        ax.set_ylabel(r'DEC [DEG]')
+        ax.set_xlabel(r'RA [h:m:s]')
+        ax.set_ylabel(r'DEC [d:m:s]')
+        plt.title(object_name)
         plt.show()
 
     # Get spectrum data from SDSS

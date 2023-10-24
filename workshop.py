@@ -15,47 +15,15 @@ print("Degrees to HMS:", toolbox.deg2hms(180))
 print(toolbox.cgs_angs2jy(148.6e-11, 5450), toolbox.cgs_angs2jy(4.2e-11, 5450))
 print(toolbox.jy2cgs_angs(1472.2, 5450))
 
-# # Berkeley 45
-# source_RA1 = toolbox.hms2deg(19, 19, 12)
-# source_DEC1 = toolbox.dms2deg(15, 43, 00)
-# fov = 27.9139  # in arcmin
-# fov_degrees = fov/60
-# toolbox.get_finder_scope(fov_degrees, ra=source_RA1, dec=source_DEC1)
-
-# # Czernik 40
-# source_RA4 = toolbox.hms2deg(19, 42, 36)
-# source_DEC4 = toolbox.dms2deg(21, 9, 14)
-# fov = 27.9139  # in arcmin
-# fov_degrees = fov/60
-# toolbox.get_finder_scope(fov_degrees, ra=source_RA4, dec=source_DEC4)
-
-# # Berkeley 51
-# source_RA5 = toolbox.hms2deg(20, 11, 54)
-# source_DEC5 = toolbox.dms2deg(34, 24, 6)
-# fov = 27.9139  # in arcmin
-# fov_degrees = fov / 60
-# toolbox.get_finder_scope(fov_degrees, ra=source_RA5, dec=source_DEC5)
-
-# # Berkeley 49
-# source_RA6 = toolbox.hms2deg(19, 54, 31)
-# source_DEC6 = toolbox.dms2deg(34, 38, 48)
-# fov = 27.9139  # in arcmin
-# fov_degrees = fov/60
-# toolbox.get_finder_scope(fov_degrees, ra=source_RA6, dec=source_DEC6)
-
 # Czernik 44
-source_RA6 = toolbox.hms2deg(22, 52, 6)
-source_DEC6 = toolbox.dms2deg(58, 17, 00)
+source_RA = toolbox.hms2deg(22, 52, 6)
+source_DEC = toolbox.dms2deg(58, 17, 00)
 fov = 27.9139  # in arcmin
 fov_degrees = fov/60
-toolbox.get_finder_scope(fov_degrees, ra=source_RA6, dec=source_DEC6)
+toolbox.get_finder_scope(fov_degrees, ra=source_RA, dec=source_DEC, object_name="Czernik 44")
 
 targets = [
-    {'ra': toolbox.hms2deg(19, 19, 12), 'dec': toolbox.dms2deg(15, 43, 00), 'name': 'Berkeley 45'},
-    {'ra': toolbox.hms2deg(19, 42, 36), 'dec': toolbox.dms2deg(21, 9, 14), 'name': 'Czernik 40'},
-    {'ra': toolbox.hms2deg(20, 11, 54), 'dec': toolbox.dms2deg(34, 24, 6), 'name': 'Berkeley 51'},
-    {'ra': toolbox.hms2deg(19, 54, 31), 'dec': toolbox.dms2deg(34, 38, 48), 'name': 'Berkeley 49'},
-    {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'NGC 7789'},
+    {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
     'Polaris'
 ]
 toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
