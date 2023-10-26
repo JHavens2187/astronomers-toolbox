@@ -155,7 +155,7 @@ class AstroToolbox:
         return equatorial.ra.degree, equatorial.dec.degree
 
     # Function to convert between equatorial coordinates and altitude and azimuth
-    def radec2altaz(self, lst, ra=None, dec=None, observer_location=None):
+    def radec2altaz(self, lst=None, ra=None, dec=None, observer_location=None):
         """
         converts equatorial coordinates to altitude and azimuth
         :param ra: right ascension of object in degrees
@@ -164,6 +164,8 @@ class AstroToolbox:
         :param lst: local sidereal time in HMS
         :return: altitude and azimuth of object in degrees
         """
+        if lst is None:
+            lst = self.LST()
         if ra is None:
             ra = self.ra
         if dec is None:

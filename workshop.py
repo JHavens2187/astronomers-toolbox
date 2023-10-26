@@ -18,12 +18,14 @@ source_RA = toolbox.hms2deg(22, 52, 6)
 source_DEC = toolbox.dms2deg(58, 17, 00)
 fov = 27.9139  # in arcmin
 fov_degrees = fov/60
+# uncomment this to show the finder scope for the star above
 # toolbox.get_finder_scope(fov_degrees, ra=source_RA, dec=source_DEC, object_name="Czernik 44")
-#
-# targets = [
-#     {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
-#     'Polaris'
-# ]
+
+targets = [
+    {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
+    'Polaris'
+]
+# uncomment this to show the sky plot with airmass and altitude
 # toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
 
 # Coordinate Transformations
@@ -34,7 +36,7 @@ print("Galactic to Equatorial:", toolbox.galactic_to_equatorial(121.174, -21.572
 print("Local Sidereal Time:", toolbox.LST())
 
 # Altitude and Azimuth
-alt, az = toolbox.radec2altaz(lst=toolbox.LST())
+alt, az = toolbox.radec2altaz()
 print("Altitude:", alt, "Azimuth:", az)
 
 # Proper Motion
