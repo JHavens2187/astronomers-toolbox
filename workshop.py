@@ -3,7 +3,7 @@ import math
 from astro_toolbox import AstroToolbox
 
 # Initialize AstroToolbox object
-toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.9717, -95.2353],
+toolbox = AstroToolbox(ra=10.684, dec=41.269, object_name="Andromeda", observer_location=[38.97106, -95.25498],
                        date=[2023, 10, 24], epoch='2000-01-01')
 
 # Utility Functions
@@ -50,7 +50,18 @@ print("Precessed RA:", prec_ra, "Precessed Dec:", prec_dec)
 # Planet Positions
 print("Planet Positions:", toolbox.planet_positions())
 
+# # what object is that?
+# results_radec = toolbox.find_objects_by_coordinates(coord_type='radec')
+# results_altaz = toolbox.find_objects_by_coordinates(coord_type='altaz')
+#
+# # Print the results
+# print("RA/Dec results:", results_radec)
+# print("Alt/Az results:", results_altaz)
+
 # Planetary Phase
 planet = "mars barycenter"
 planet = 301
 print(f'Planetary Phase of {planet}:, {toolbox.planetary_phase(planet, date=[2023, 10, 28]):0.4}')
+
+limiting_magnitude = toolbox.get_limiting_mag(38.97113, -95.25416)
+print("Limiting magnitude Value:", limiting_magnitude)

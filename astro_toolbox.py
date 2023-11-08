@@ -4,6 +4,8 @@
 import datetime
 import math
 from datetime import datetime, timedelta
+import requests
+import rasterio
 
 import astroplan
 import astropy.units as u
@@ -344,6 +346,84 @@ class AstroToolbox:
         ra = self.deg2hms(coord.ra.degree)
         dec = self.deg2dms(coord.dec.degree)
         return ra, dec
+
+    def get_light_pollution_value(self, observer_lat=None, observer_lon=None):
+        geotiff_path = '/Users/joehavens/Documents/Documents/pythonProject/Astro/astronomers-toolbox/wa_2015_original/World_Atlas_2015.tif'
+        if (observer_lat and observer_lon) is None:
+            observer_lat, observer_lon = self.observer_location
+        # Open the GEOTiff file
+        with rasterio.open(geotiff_path) as dataset:
+            # Optionally: Transform the observer's coordinates if necessary
+            # ...
+            # Get the pixel value at the given coordinates (which corresponds to light pollution)
+            value = dataset.read(1)  # Assuming light pollution data is in band 1
+            row, col = dataset.index(observer_lon, observer_lat)
+            return value[row, col]
+
+    def get_limiting_mag(self, observer_lat=None, observer_lon=None):
+        """
+        calculates the limiting magnitude of the sky
+        :param abright: brightness of the object in mcd/m^2
+        :param observer_lon: observer's longitude in degrees
+        :param observer_lat: observer's latitude in degrees
+        :return: limiting magnitude
+        """
+        if (observer_lat and observer_lon) is None:
+            observer_lat, observer_lon = self.observer_location
+
+        # Define the natural sky brightness
+        natural_brightness = 0.171168465
+        total_brightness = self.get_light_pollution_value(observer_lat=observer_lat,
+                                                          observer_lon=observer_lon) + natural_brightness
+        SQM = np.log10(total_brightness / 108000000) / -0.4
+        print(SQM)
+        lim_mag = SQM + 7.93 - 5 * np.log10(10 ** ((7.93 - SQM) / 5) + 1)
+        return lim_mag
+
+    def find_objects_by_coordinates(self, coord_type='radec', ra=None, dec=None, alt=None, az=None, radius=1,
+                                    lim_mag=None):
+        """
+        Find celestial objects near the given coordinates within a specified limiting magnitude.
+
+        :param coord_type: Type of coordinates provided ('radec' or 'altaz')
+        :param ra: Right Ascension in degrees (if coord_type is 'radec')
+        :param dec: Declination in degrees (if coord_type is 'radec')
+        :param alt: Altitude in degrees (if coord_type is 'altaz')
+        :param az: Azimuth in degrees (if coord_type is 'altaz')
+        :param radius: Search radius in arcminutes
+        :param lim_mag: Limiting magnitude for the search
+        :return: List of tuples with object information (ID, RA, Dec, Object Type)
+        """
+        # Set up SIMBAD with the fields you want to return
+        Simbad.add_votable_fields('otype', 'flux(V)')
+
+        # Rest of the function remains the same ...
+
+        # Query SIMBAD database
+        result_table = Simbad.query_region(sky_coord, radius=search_radius)
+
+        if result_table is None:
+            return []
+
+        # Filter results by limiting magnitude if specified
+        if lim_mag is not None:
+            result_table = result_table[result_table['FLUX_V'] <= lim_mag]
+
+        # Extract the list of objects
+        objects_list = []
+        for obj in result_table:
+            object_id = obj['MAIN_ID']
+            object_ra = obj['RA']
+            object_dec = obj['DEC']
+            object_type = obj['OTYPE']
+            object_mag = obj['FLUX_V']  # This is the visual magnitude from SIMBAD
+            objects_list.append((object_id, object_ra, object_dec, object_type, object_mag))
+
+        # If limiting magnitude is set, filter the objects
+        if lim_mag is not None:
+            objects_list = [obj for obj in objects_list if obj[4] is not None and obj[4] <= lim_mag]
+
+        return objects_list
 
     # Observational Planning
     def observable_time(self, observer_location=None, object_name=None):
