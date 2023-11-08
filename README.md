@@ -27,7 +27,7 @@ _import astronomy_toolbox as toolbox_
 
 Due to size constraints on GitHub, some large files necessary for this project are not hosted directly in this repository. To download `World_Atlas_2015.tif`, please visit the following link:
 
-[[Download World_Atlas_2015.tif](https://www2.lightpollutionmap.info/data/wa_2015_original.zip)]
+[[Download World_Atlas_2015.tif](https://www2.lightpollutionmap.info/data/wa_2015_original.zip)](CLICK ME!)
 
 Please note that this file is subject to the terms and conditions of the hosting service and the licensing it was shared under.
 **Contributing**
