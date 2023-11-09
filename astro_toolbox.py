@@ -16,7 +16,7 @@ from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConst
 from astroplan import FixedTarget
 from astroplan import Observer
 from astroplan.plots import plot_airmass, plot_altitude
-from astropy.coordinates import SkyCoord, FK5, EarthLocation
+from astropy.coordinates import SkyCoord, solar_system_ephemeris, FK5, EarthLocation, AltAz
 from astropy.time import Time
 from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
@@ -157,26 +157,27 @@ class AstroToolbox:
         return equatorial.ra.degree, equatorial.dec.degree
 
     # Function to convert between equatorial coordinates and altitude and azimuth
-    def radec2altaz(self, lst=None, ra=None, dec=None, observer_location=None):
+    def radec2altaz(self, ra=None, dec=None, observer_location=None):
         """
-        converts equatorial coordinates to altitude and azimuth
+        Converts equatorial coordinates to altitude and azimuth using both
+        manual calculation and SkyCoord transformation.
         :param ra: right ascension of object in degrees
         :param dec: declination of object in degrees
-        :param (list) observer_location:  observer's location in lat lon format
-        :param lst: local sidereal time in HMS
+        :param observer_location: observer's location in lat lon format
         :return: altitude and azimuth of object in degrees
         """
-        if lst is None:
-            lst = self.LST()
         if ra is None:
             ra = self.ra
         if dec is None:
             dec = self.dec
         if observer_location is None:
             observer_location = self.observer_location
+
+        # Manual calculation
         ra_rad = math.radians(ra)
         dec_rad = math.radians(dec)
         lat_rad = math.radians(observer_location[0])
+        lst = self.LST()
         lst_rad = math.radians(lst[0] * 15)
 
         sin_alt = math.sin(dec_rad) * math.sin(lat_rad) + math.cos(dec_rad) * math.cos(lat_rad) * math.cos(
@@ -186,10 +187,39 @@ class AstroToolbox:
         sin_az = math.sin(lst_rad - ra_rad)
         cos_az = (math.sin(dec_rad) - math.sin(alt) * math.sin(lat_rad)) / (math.cos(alt) * math.cos(lat_rad))
         az = math.degrees(math.atan2(sin_az, cos_az))
+        az = az % 360  # Ensure azimuth is within 0-360 degrees
 
-        return alt, az
+        # Ensure the RA and Dec are in Astropy units
+        ra = ra * u.deg
+        dec = dec * u.deg
 
-    def altaz2radec(self, alt, az, lst, observer_location=None):
+        # Get the observer's Earth location
+        location = EarthLocation(lat=observer_location[0] * u.deg, lon=observer_location[1] * u.deg)
+
+        # Use the current time for the observation
+        current_time = Time.now()
+
+        # Create the SkyCoord object for the given RA and Dec
+        sky_coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
+
+        # Create the AltAz frame with the current time and observer location
+        altaz_frame = AltAz(obstime=current_time, location=location)
+
+        # Transform the SkyCoord object to the AltAz frame
+        altaz_coord = sky_coord.transform_to(altaz_frame)
+
+        # Extract the altitude and azimuth in degrees
+        alt_sky = altaz_coord.alt.deg
+        az_sky = altaz_coord.az.deg
+
+        # Check if values are close enough; if not, issue a warning
+        if not (math.isclose(alt, alt_sky, abs_tol=0.1) and math.isclose(az, az_sky, abs_tol=0.1)):
+            Warning("Calculated AltAz values differ from SkyCoord transformation by more than 0.1 degrees.")
+
+        # Return the SkyCoord values regardless of the check
+        return alt_sky, az_sky
+
+    def altaz2radec(self, alt, az, lst=None, observer_location=None):
         """
         Converts horizontal coordinates (Altitude, Azimuth) to equatorial coordinates (RA, DEC).
 
@@ -200,13 +230,15 @@ class AstroToolbox:
 
             :return tuple: Right Ascension and Declination in degrees
         """
+        if lst is None:
+            lst = self.LST()
         if observer_location is None:
             observer_location = self.observer_location
         # Convert angles to radians
         alt_rad = math.radians(alt)
         az_rad = math.radians(az)
-        lat_rad = math.radians(lat)
-        lst_rad = math.radians(lst * 15)  # Convert LST to degrees and then to radians
+        lat_rad = math.radians(observer_location[0])
+        lst_rad = math.radians(lst[0] * 15)  # Convert LST to degrees and then to radians
 
         # Calculate Declination
         sin_dec = math.sin(alt_rad) * math.sin(lat_rad) + math.cos(alt_rad) * math.cos(lat_rad) * math.cos(az_rad)
@@ -215,12 +247,37 @@ class AstroToolbox:
         # Calculate Right Ascension
         sin_ra = -math.sin(az_rad) * math.cos(alt_rad)
         cos_ra = (math.sin(alt_rad) - sin_dec * math.sin(lat_rad)) / (math.cos(math.asin(sin_dec)) * math.cos(lat_rad))
-        ra = lst * 15 - math.degrees(math.atan2(sin_ra, cos_ra))  # Convert lst from hours to degrees
+        ra = lst[0] * 15 - math.degrees(math.atan2(sin_ra, cos_ra))  # Convert lst from hours to degrees
 
         # Normalize RA to be between 0 and 360
         ra = ra % 360
 
-        return ra, dec
+        # Ensure the altitude and azimuth are in Astropy units
+        alt = alt * u.deg
+        az = az * u.deg
+
+        # Get the observer's Earth location
+        location = EarthLocation(lat=observer_location[0]*u.deg, lon=observer_location[1]*u.deg)
+
+        # Use the current time for the observation
+        obstime = Time.now()
+
+        # Create the AltAz frame and transform it to ICRS (RA-Dec)
+        altaz_frame = AltAz(obstime=obstime, location=location)
+        altaz_coord = SkyCoord(alt=alt, az=az, frame=altaz_frame)
+        radec = altaz_coord.transform_to('icrs')
+
+        ra_sky = radec.ra.deg
+        dec_sky = radec.dec.deg
+
+        # Check if values are close enough; if not, issue a warning
+        if not (math.isclose(ra, ra_sky, abs_tol=0.1) and math.isclose(dec, dec_sky, abs_tol=0.1)):
+            Warning("Calculated RA-Dec values differ from SkyCoord transformation by more than 0.1 degrees.")
+
+        # Return the SkyCoord values regardless of the check
+        return ra_sky, dec_sky
+
+        return ra / 15, dec
 
     # Time and Motion
     def proper_motion(self, pm_ra, pm_dec, ra=None, dec=None, epoch=None):
@@ -362,12 +419,27 @@ class AstroToolbox:
 
     def get_limiting_mag(self, observer_lat=None, observer_lon=None):
         """
-        calculates the limiting magnitude of the sky
-        :param abright: brightness of the object in mcd/m^2
+        Calculates the limiting magnitude of the sky.
         :param observer_lon: observer's longitude in degrees
         :param observer_lat: observer's latitude in degrees
         :return: limiting magnitude
         """
+
+        def interpolate_limiting_mag(sqm_value, mag_range_low, mag_range_high, sqm_low, sqm_high):
+            """
+            Interpolates the limiting magnitude based on SQM value.
+            :param sqm_value: SQM value to interpolate
+            :param mag_range_low: Lower limit of the magnitude range
+            :param mag_range_high: Upper limit of the magnitude range
+            :param sqm_low: Lower limit of the SQM range
+            :param sqm_high: Upper limit of the SQM range
+            :return: Interpolated limiting magnitude
+            """
+            # Proportion of SQM value within its range
+            proportion = (sqm_value - sqm_low) / (sqm_high - sqm_low)
+            # Interpolated limiting magnitude
+            return mag_range_low + proportion * (mag_range_high - mag_range_low)
+
         if (observer_lat and observer_lon) is None:
             observer_lat, observer_lon = self.observer_location
 
@@ -376,12 +448,31 @@ class AstroToolbox:
         total_brightness = self.get_light_pollution_value(observer_lat=observer_lat,
                                                           observer_lon=observer_lon) + natural_brightness
         SQM = np.log10(total_brightness / 108000000) / -0.4
-        print(SQM)
-        lim_mag = SQM + 7.93 - 5 * np.log10(10 ** ((7.93 - SQM) / 5) + 1)
+
+        # Determine the limiting magnitude based on the SQM value
+        if SQM >= 22.00:
+            lim_mag = 7.5  # or higher
+        elif 21.99 >= SQM > 21.89:
+            lim_mag = interpolate_limiting_mag(SQM, 7.0, 7.49, 21.89, 21.99)
+        elif 21.89 >= SQM > 21.69:
+            lim_mag = interpolate_limiting_mag(SQM, 6.5, 6.99, 21.69, 21.89)
+        elif 21.69 >= SQM > 20.49:
+            lim_mag = interpolate_limiting_mag(SQM, 6.0, 6.49, 20.49, 21.69)
+        elif 20.49 >= SQM > 19.50:
+            lim_mag = interpolate_limiting_mag(SQM, 5.5, 5.99, 19.50, 20.49)
+        elif 19.50 >= SQM > 18.94:
+            lim_mag = interpolate_limiting_mag(SQM, 5.0, 5.49, 18.94, 19.50)
+        elif 18.94 >= SQM > 18.38:
+            lim_mag = interpolate_limiting_mag(SQM, 4.5, 4.99, 18.38, 18.94)
+        elif 18.38 >= SQM:
+            lim_mag = 4.49  # or lower
+        else:
+            lim_mag = 4.0  # or lower, this is an edge case if SQM is below the table's range
+
         return lim_mag
 
-    def find_objects_by_coordinates(self, coord_type='radec', ra=None, dec=None, alt=None, az=None, radius=1,
-                                    lim_mag=None):
+    def find_objects_by_coordinates(self, ra=None, dec=None, alt=None, az=None, radius=1,
+                                    lim_mag=None, observer_lat=None, observer_lon=None):
         """
         Find celestial objects near the given coordinates within a specified limiting magnitude.
 
@@ -391,19 +482,34 @@ class AstroToolbox:
         :param alt: Altitude in degrees (if coord_type is 'altaz')
         :param az: Azimuth in degrees (if coord_type is 'altaz')
         :param radius: Search radius in arcminutes
-        :param lim_mag: Limiting magnitude for the search
+        :param lim_mag: Limiting magnitude for the search. use an absurdly large number for no limit
+        :param observer_lon: observers longitude in degrees
+        :param observer_lat: observers latitude in degrees
         :return: List of tuples with object information (ID, RA, Dec, Object Type)
         """
         # Set up SIMBAD with the fields you want to return
         Simbad.add_votable_fields('otype', 'flux(V)')
+        current_time = Time.now()
 
-        # Rest of the function remains the same ...
+        if (observer_lat and observer_lon) is None:
+            observer_lat, observer_lon = self.observer_location
+        if (ra and dec) is None:
+            ra = self.ra
+            dec = self.dec
+        if alt and az:
+            ra, dec = self.altaz2radec(alt, az)
+
+        # Use the RA and DEC to make a SkyCoord object, which we use to query and image
+        sky_coord = SkyCoord(ra=ra*u.deg, dec=dec*u.deg, frame='icrs')
 
         # Query SIMBAD database
-        result_table = Simbad.query_region(sky_coord, radius=search_radius)
+        result_table = Simbad.query_region(sky_coord, radius=radius*u.arcmin)
 
         if result_table is None:
             return []
+
+        if lim_mag is None:
+            lim_mag = self.get_limiting_mag()
 
         # Filter results by limiting magnitude if specified
         if lim_mag is not None:
@@ -422,6 +528,19 @@ class AstroToolbox:
         # If limiting magnitude is set, filter the objects
         if lim_mag is not None:
             objects_list = [obj for obj in objects_list if obj[4] is not None and obj[4] <= lim_mag]
+
+            # Now check for planets and add them to the list if they are within the search radius
+        with solar_system_ephemeris.set('builtin'):
+            observer_location = EarthLocation(lat=observer_lat * u.deg, lon=observer_lon * u.deg)
+            for planet_name in ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']:
+                planet = get_body(planet_name, Time.now(), observer_location)
+                planet_coord = SkyCoord(ra=planet.ra, dec=planet.dec, frame='icrs')
+
+                # Check if the planet is within the search radius
+                if planet_coord.separation(sky_coord) <= radius * u.arcmin:
+                    # Add the planet to the objects list
+                    objects_list.append(
+                        (planet_name.capitalize(), planet.ra.to_string(), planet.dec.to_string(), 'Planet', None))
 
         return objects_list
 
@@ -462,7 +581,8 @@ class AstroToolbox:
         if observer_location is None:
             observer_location = self.observer_location  # Replace with your default observer location
 
-        observer_location = EarthLocation(lat=observer_location[0]*u.deg, lon=observer_location[1]*u.deg, height=1*u.m)
+        observer_location = EarthLocation(lat=observer_location[0] * u.deg, lon=observer_location[1] * u.deg,
+                                          height=1 * u.m)
         # Create an Observer object
         observer = Observer(location=observer_location)
 
@@ -496,7 +616,7 @@ class AstroToolbox:
         plt.legend()
         plt.show()
 
-    def get_finder_scope(self, fov, ra=None, dec=None, object_name='object', img_width=40/60, img_height=40/60):
+    def get_finder_scope(self, fov, ra=None, dec=None, object_name='object', img_width=40 / 60, img_height=40 / 60):
         if ra is None:
             ra = self.ra
         if dec is None:

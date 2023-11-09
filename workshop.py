@@ -25,6 +25,7 @@ targets = [
     {'ra': toolbox.hms2deg(22, 52, 6), 'dec': toolbox.dms2deg(58, 17, 00), 'name': 'Czernik 44'},
     'Polaris'
 ]
+
 # uncomment this to show the sky plot with airmass and altitude
 # toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
 
@@ -50,14 +51,6 @@ print("Precessed RA:", prec_ra, "Precessed Dec:", prec_dec)
 # Planet Positions
 print("Planet Positions:", toolbox.planet_positions())
 
-# # what object is that?
-# results_radec = toolbox.find_objects_by_coordinates(coord_type='radec')
-# results_altaz = toolbox.find_objects_by_coordinates(coord_type='altaz')
-#
-# # Print the results
-# print("RA/Dec results:", results_radec)
-# print("Alt/Az results:", results_altaz)
-
 # Planetary Phase
 planet = "mars barycenter"
 planet = 301
@@ -65,3 +58,11 @@ print(f'Planetary Phase of {planet}:, {toolbox.planetary_phase(planet, date=[202
 
 limiting_magnitude = toolbox.get_limiting_mag(38.97113, -95.25416)
 print("Limiting magnitude Value:", limiting_magnitude)
+
+# what object is that?
+perseid_coord = toolbox.get_object_coordinates('Perseid')
+print(perseid_coord)
+results_radec = toolbox.find_objects_by_coordinates(perseid_coord, radius=60)
+
+# Print the results
+print("RA/Dec results:", results_radec)
