@@ -1,17 +1,10 @@
 # a toolbox for astronomers
 # J. Havens, 2023
 
+from datetime import datetime, timedelta
 import datetime
 import math
-from datetime import datetime, timedelta
-import requests
-import rasterio
 
-import astroplan
-import astropy.units as u
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint
 from astroplan import FixedTarget
 from astroplan import Observer
@@ -22,8 +15,18 @@ from astroquery.sdss import SDSS
 from astroquery.simbad import Simbad
 from astroquery.skyview import SkyView
 from skyfield.api import load, Topos
-
 import LST_calculator as lst
+import astroplan
+import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import rasterio
+import requests
+
+
+
+
 
 
 # TODO: Implement error handling for functions to make the toolbox more robust.
@@ -296,7 +299,7 @@ class AstroToolbox:
             dec = self.dec
         if epoch is None:
             epoch = self.epoch
-        current_time = Time(datetime.now())
+        current_time = Time(datetime.datetime.now())
         delta_time = current_time - Time(epoch)
         new_ra = ra + pm_ra * delta_time.to(u.yr).value
         new_dec = dec + pm_dec * delta_time.to(u.yr).value
@@ -317,7 +320,7 @@ class AstroToolbox:
         if epoch is None:
             epoch = self.epoch
         epoch_time = Time(epoch)
-        current_time = Time(datetime.now())
+        current_time = Time(datetime.datetime.now())
         c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame=FK5, equinox=epoch_time)
         c_prec = c.transform_to(FK5(equinox=current_time))
         return c_prec.ra.degree, c_prec.dec.degree
@@ -358,7 +361,12 @@ class AstroToolbox:
         0˚ - full phase \n
         90˚ - first quarter phase \n
         180˚ - new phase \n
-        :param (str) planet: The name of the planet for which to calculate the phase angle. Must be a valid name recognized by the Skyfield library (e.g., 'mars barycenter').
+        availible objects are:
+        0 SOLAR SYSTEM BARYCENTER, 1 MERCURY BARYCENTER, 2 VENUS BARYCENTER, 3 EARTH BARYCENTER, 4 MARS BARYCENTER,
+        5 JUPITER BARYCENTER, 6 SATURN BARYCENTER, 7 URANUS BARYCENTER, 8 NEPTUNE BARYCENTER, 9 PLUTO BARYCENTER,
+        10 SUN, 199 MERCURY, 299 VENUS, 301 MOON, 399 EARTH
+        :param (str) planet: The name of the planet for which to calculate the phase angle. Must be a valid name recognized by the Skyfield library
+        (e.g., 'mars barycenter').
         :param (list) date: (optional) date of observation. If not provided, self.date will be used.
         :param (list) observer_location: (optional) location of observer. If not provided, self.observer_location will be used.
         :return: (float) The phase angle of the planet in degrees. The phase angle is the angle between the Sun and the planet as observed from Earth.
@@ -503,7 +511,7 @@ class AstroToolbox:
         sky_coord = SkyCoord(ra=ra*u.deg, dec=dec*u.deg, frame='icrs')
 
         # Query SIMBAD database
-        result_table = Simbad.query_region(sky_coord, radius=radius*u.arcmin)
+        result_table = Simbad.query_region(sky_coord)
 
         if result_table is None:
             return []
@@ -514,6 +522,9 @@ class AstroToolbox:
         # Filter results by limiting magnitude if specified
         if lim_mag is not None:
             result_table = result_table[result_table['FLUX_V'] <= lim_mag]
+
+        # Now filter by radius
+        result_table = result_table[result_table['RA'].separation(ra * u.deg) <= radius * u.arcmin]
 
         # Extract the list of objects
         objects_list = []
