@@ -24,11 +24,6 @@ import pandas as pd
 import rasterio
 import requests
 
-
-
-
-
-
 # TODO: Implement error handling for functions to make the toolbox more robust.
 
 
@@ -485,10 +480,10 @@ class AstroToolbox:
         Find celestial objects near the given coordinates within a specified limiting magnitude.
 
         :param coord_type: Type of coordinates provided ('radec' or 'altaz')
-        :param ra: Right Ascension in degrees (if coord_type is 'radec')
-        :param dec: Declination in degrees (if coord_type is 'radec')
-        :param alt: Altitude in degrees (if coord_type is 'altaz')
-        :param az: Azimuth in degrees (if coord_type is 'altaz')
+        :param ra: Right Ascension in degrees
+        :param dec: Declination in degrees
+        :param alt: Altitude in degrees
+        :param az: Azimuth in degrees
         :param radius: Search radius in arcminutes
         :param lim_mag: Limiting magnitude for the search. use an absurdly large number for no limit
         :param observer_lon: observers longitude in degrees
