@@ -4,7 +4,6 @@
 from datetime import datetime, timedelta
 import datetime
 import math
-
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint
 from astroplan import FixedTarget
 from astroplan import Observer
@@ -409,16 +408,23 @@ class AstroToolbox:
 
     def get_light_pollution_value(self, observer_lat=None, observer_lon=None):
         geotiff_path = '/Users/joehavens/Documents/Documents/pythonProject/Astro/astronomers-toolbox/wa_2015_original/World_Atlas_2015.tif'
-        if (observer_lat and observer_lon) is None:
+        if observer_lat is None or observer_lon is None:
             observer_lat, observer_lon = self.observer_location
-        # Open the GEOTiff file
+
+        # Open the GeoTIFF file
         with rasterio.open(geotiff_path) as dataset:
-            # Optionally: Transform the observer's coordinates if necessary
-            # ...
-            # Get the pixel value at the given coordinates (which corresponds to light pollution)
-            value = dataset.read(1)  # Assuming light pollution data is in band 1
-            row, col = dataset.index(observer_lon, observer_lat)
-            return value[row, col]
+            # Transform the observer's coordinates to the dataset's coordinate system
+            transform = dataset.transform
+            row, col = rasterio.transform.rowcol(transform, observer_lon, observer_lat)
+
+            # Ensure the coordinates are within the bounds of the dataset
+            if 0 <= row < dataset.height and 0 <= col < dataset.width:
+                # Get the pixel value at the given coordinates (which corresponds to light pollution)
+                value = dataset.read(1)[row, col]  # Assuming light pollution data is in band 1
+                return value
+            else:
+                raise ValueError("Observer location is outside the bounds of the GeoTIFF file.")
+
 
     def get_limiting_mag(self, observer_lat=None, observer_lon=None):
         """

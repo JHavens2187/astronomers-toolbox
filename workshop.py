@@ -2,6 +2,7 @@
 import math
 import datetime
 from astro_toolbox import AstroToolbox
+from astropy.time import Time
 
 # Welcome to the AstroToolbox Workshop!
 # This script is designed to help you learn how to use the AstroToolbox for various astronomical calculations.
@@ -48,7 +49,7 @@ targets = [
 ]
 
 # Uncomment the line below to display the sky plot with airmass and altitude
-# toolbox.plot_sky(targets=targets, observation_time=Time('2023-10-10 18:00:00'))
+toolbox.plot_sky(targets=targets, observation_time=Time('2024-11-27 23:00:00'))
 
 # Coordinate Transformations
 print("Equatorial to Galactic:", toolbox.equatorial_to_galactic())
