@@ -11,12 +11,6 @@ Data visualization,
 Querying astronomical databases,
 And more to come!
 
-**Installation**
-
-To install the required packages, run the following command:
-
-_pip install -r requirements.txt_
-
 **Usage**
 
 Import the toolbox into your Python script and access various functions to streamline your astronomy workflow.
@@ -30,6 +24,7 @@ Due to size constraints on GitHub, some large files necessary for this project a
 [CLICK ME!](https://www2.lightpollutionmap.info/data/wa_2015_original.zip)
 
 Please note that this file is subject to the terms and conditions of the hosting service and the licensing it was shared under.
+
 **Contributing**
 
 This project is a work in progress and will continue to evolve. Feel free to open an issue or submit a pull request if you have any suggestions, feature requests, or bug reports.
